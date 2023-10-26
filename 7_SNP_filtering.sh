@@ -18,6 +18,14 @@ gatk SelectVariants \
     --exclude-non-variants \
     -O ${ODIR}/${1}_${cov}_${ds}_all_pops.vcf.gz
 
+# Extract annotation data for QD, MQ, FS, SOR, MQRankSum,ReadPosRankSum
+zcat ${ODIR}/${1}_LC_VO_all_pops.vcf.gz | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^QD=" | awk -F "=" '{print $2}' > ${ODIR}/ann_tables/${1}_LC_VO_all_pops_QD${1}.txt
+zcat ${ODIR}/${1}_LC_VO_all_pops.vcf.gz | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^MQ=" | awk -F "=" '{print $2}' > ${ODIR}/ann_tables/${1}_LC_VO_all_pops_MQ${1}.txt
+zcat ${ODIR}/${1}_LC_VO_all_pops.vcf.gz | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^FS=" | awk -F "=" '{print $2}' > ${ODIR}/ann_tables/${1}_LC_VO_all_pops_FS${1}.txt
+zcat ${ODIR}/${1}_LC_VO_all_pops.vcf.gz | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^SOR=" | awk -F "=" '{print $2}' > ${ODIR}/ann_tables/${1}_LC_VO_all_pops_SOR${1}.txt
+zcat ${ODIR}/${1}_LC_VO_all_pops.vcf.gz | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^MQRankSum=" | awk -F "=" '{print $2}' > ${ODIR}/ann_tables/${1}_LC_VO_all_pops_MQRankSum${1}.txt
+zcat ${ODIR}/${1}_LC_VO_all_pops.vcf.gz | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^ReadPosRankSum=" | awk -F "=" '{print $2}' > ${ODIR}/ann_tables/${1}_LC_VO_all_pops_ReadPosRankSum${1}.txt
+
 # Gatk filtering - adds PASS to the filter field, otherwise, if failed adds the name/s of the failed filter
 gatk VariantFiltration \
     -V ${ODIR}/${cov}_${ds}_all_pops.vcf.gz \
