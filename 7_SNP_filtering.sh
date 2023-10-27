@@ -26,6 +26,33 @@ zcat ${ODIR}/${1}_LC_VO_all_pops.vcf.gz | grep -v "^#" | awk '{print $8}' | sed 
 zcat ${ODIR}/${1}_LC_VO_all_pops.vcf.gz | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^MQRankSum=" | awk -F "=" '{print $2}' > ${ODIR}/ann_tables/${1}_LC_VO_all_pops_MQRankSum${1}.txt
 zcat ${ODIR}/${1}_LC_VO_all_pops.vcf.gz | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^ReadPosRankSum=" | awk -F "=" '{print $2}' > ${ODIR}/ann_tables/${1}_LC_VO_all_pops_ReadPosRankSum${1}.txt
 
+# combine the files for each annotation 
+declare -a arr=("QD" "MQ" "FS" "SOR" "MQRankSum" "ReadPosRankSum")
+
+all_files_exist=true
+
+for i in "${arr[@]}"; do
+    pattern="${ODIR}/*$i*.txt"
+    files=($pattern)  
+    if [ ${#files[@]} -ne 4 ]; then
+        all_files_exist=false
+        break
+    fi
+done
+
+if [ "$all_files_exist" = true ]; then
+    for i in "${arr[@]}"; do
+        ann=$i
+        for file in "${ODIR}"/*"$ann"*.txt; do
+            if [ -f "$file" ]; then
+                cat "$file" >> "${ODIR}/LC_VO_all_pops_${ann}.txt"
+            fi
+        done
+    done
+else
+    echo "Skipping"
+fi
+
 # Gatk filtering - adds PASS to the filter field, otherwise, if failed adds the name/s of the failed filter
 gatk VariantFiltration \
     -V ${ODIR}/${cov}_${ds}_all_pops.vcf.gz \
@@ -114,7 +141,7 @@ ${DIR}/concat_pop_list.txt | mawk '!/CHR/' | mawk '$6 > 0.1' | cut -f1,2 >> badl
     --max-meanDP 60 \
     --recode --recode-INFO-all --stdout | gzip -c > ${ODIR}/${cov}_${ds}_all_pops_snpfil_7.vcf.gz
 
-# Min-meanDP -
+# Min-meanDP
 /home/564/km6006/bin/vcftools \
     --gzvcf ${ODIR}/${cov}_${ds}_all_pops_snpfil_7.vcf.gz \
     --min-meanDP 3 \
