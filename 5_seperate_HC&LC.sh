@@ -1,4 +1,5 @@
 ### Seperate high coverage and low coverage samples, for seperate SNP filtering pipelines
+### GNU parallel by populations containing HC and LC samples (H01, H05, D01, D04, A03,& A07) 
 
 module load bcftools
 module load gatk

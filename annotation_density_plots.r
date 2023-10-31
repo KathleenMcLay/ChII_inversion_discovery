@@ -1,3 +1,5 @@
+### Density plots for VariantFiltration annotations
+
 library(data.table)
 library(ggplot2)
 library(doParallel)

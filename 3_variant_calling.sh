@@ -1,4 +1,5 @@
 ### Call variants with GATK HaplotypeCaller by chromosome and concatenate output files using bcftools concat 
+### GNU parallel by sample 
 
 module load gatk 
 module load bcftools

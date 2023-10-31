@@ -1,4 +1,5 @@
 ### Combine all samples per population using GATK CombineGVCF, joint call using GATK GenotypeGVCF by chromosome and concatenate output files using bcftools concat 
+### GNU parallel by population 
 
 module load gatk
 module load bcftools
