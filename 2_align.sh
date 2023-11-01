@@ -1,4 +1,5 @@
 ### Trim, align, clean, mark PCR duplicates. Generate QC, alignment and coverage reports 
+### GNU parallel by sample 
 
 module load fastp
 module load fastqc
