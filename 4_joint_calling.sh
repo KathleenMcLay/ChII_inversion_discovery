@@ -35,7 +35,7 @@ do
        -R /scratch/ht96/km6006/SLv141Asm_Ch20RN.fasta \
        -V ${CBDIR}/${1}_cohort.g.vcf.gz \
        -O ${SPDIR}/${1}_${chr}_cohort_jntcl.vcf.gz \
-       --all-sites \
+       --include-non-variant-sites \
        --intervals $i &
 done
 
