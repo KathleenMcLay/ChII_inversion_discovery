@@ -1,4 +1,6 @@
-### SNP Filtering for data with only variant sites 
+### SNP filtering part 1
+### GNU parallel by chromosome 
+### for dataset including non-variant sites exclude non-variant site, QD and QUAL filters 
 
 module load gatk
 
@@ -38,9 +40,3 @@ gatk VariantFiltration \
     --max-missing 0.8 \
     --remove-filtered-all \
     --recode --recode-INFO-all --stdout | gzip -c > ${ODIR}/${1}_${cov}_${ds}_all_pops_snpfil_2.vcf.gz
-
-# Check missing data per sample
-/home/564/km6006/bin/vcftools \
-    --gzvcf ${ODIR}/${1}_${cov}_${ds}_all_pops_snpfil_2.vcf.gz \
-    --missing-indv
-    --out ${ODIR}/${1}_${cov}_${ds}_missing_inds

@@ -41,7 +41,7 @@ done
 
 wait
 
-# concatenate the chromosomes for each population, remove the chromosome files once done  
+# concatenate the chromosomes for each population  
 
 #create list variables 
 file_list="${JCDIR}/${1}_file_list.txt"
@@ -50,20 +50,13 @@ sort_list="${JCDIR}/${1}_sorted_file_list.txt"
 # find all files for the current sample in the output directory 
 find "$SPDIR" -type f -name "${1}_*.vcf.gz" >> "$file_list"
 
-# crete a sorted list of chromosome files and concatenate and index the files 
+# create a sorted list of chromosome files and concatenate and index the files 
 if [ -s "$file_list" ]; then
     awk '{print $1}' "$file_list" | sort -t'_' -k5 -n > "$sort_list" 
     # Concatenate and index 
     bcftools concat --threads 12 --file-list "$sort_list" --output "${JCDIR}/${1}_jntcl.vcf.gz" 
-    gatk IndexFeatureFile --input "${JCDIR}/${1}_jntcl.vcf.gz" 
+    bcftools index --threads 6 -t "${JCDIR}/${1}_jntcl.vcf.gz" 
 
-    # # Remove files 
-    while IFS= read -r file; do
-        rm "$file"
-    done < "$file_list"
-
-    rm "$file_list"
-    rm "$sort_list"
 else
     echo "No match for: $1" 
 fi  

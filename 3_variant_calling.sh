@@ -47,15 +47,8 @@ if [ -s "$file_list" ]; then
     awk '{print $1}' "$file_list" | sort -t'_' -k5 -n > "$sort_list" 
     # Concatenate and index 
     bcftools concat --threads 6 --file-list "$sort_list" --output "${VCDIR}/${1}_vrnt.g.vcf.gz" 
-    gatk IndexFeatureFile --input "${VCDIR}/${1}_vrnt.g.vcf.gz" 
+    bcftools index --threads 6 -t "${VCDIR}/${1}_vrnt.g.vcf.gz" 
 
-    # Remove files 
-    while IFS= read -r file; do
-        rm "$file"
-    done < "$file_list"
-
-    rm "$file_list"
-    rm "$sort_list"
 else
     echo "No match for: $1" 
 fi  
