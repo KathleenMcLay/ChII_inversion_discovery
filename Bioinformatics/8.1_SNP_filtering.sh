@@ -86,4 +86,18 @@ awk '!/CHR/ && $6 > 0.4 {print $1, $2}' ${ODIR}/concat_LCVO_snpfil_4.txt > ${ODI
 /home/564/km6006/bin/vcftools \
     --gzvcf ${ODIR}/${cov}${ds}_allpops_snpfil_6.vcf.gz \
     --min-meanDP 3 \
-    --recode --recode-INFO-all --out ${ODIR}/${cov}${ds}_allpops_snpfil_7_final
+    --recode --recode-INFO-all --stdout | gzip -c > ${ODIR}/${cov}${ds}_allpops_snpfil_7_final.vcf.gz
+
+bcftools index -t ${ODIR}/${cov}${ds}_allpops_snpfil_7_final.vcf.gz
+
+# Merge the seperately SNP filtered high coverage (HC) and low coverage (LC) data and filter sites that have > 20% missing data in the final dataset 
+hcdata="${ODIR}/HC/HC_VO_all_pops_snpfil_6_final.vcf.gz"
+lcdata="${ODIR}/LC/LCVO_allpops_snpfil_9_final.vcf.gz"
+
+bcftools merge ${hcdata} ${lcdata} -o ${ODIR}/allpops_VO.vcf
+bcftools index -t ${ODIR}/allpops_VO.vcf
+
+/home/564/km6006/bin/vcftools \
+    --vcf ${ODIR}/allpops_VO.vcf \
+    --max-missing 0.8 \
+    --recode --recode-INFO-all --stdout | gzip -c > ${ODIR}/allpops_VO_0.8_final.vcf.gz
