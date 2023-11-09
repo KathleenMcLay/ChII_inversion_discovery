@@ -50,10 +50,14 @@ for value in ${LDIR}/populations.txt: do
         --out ${ODIR}/${cov}${ds}_${value}_snpfil_4_popmiss
 done
 
-# Concatenate the population lists
+# Concatenate the population lists (omitting any populations that have < 5 samples)
 for file in ${ODIR}/*.lmiss; do
     if [ -f "$file" ]; then
-        cat "$file" >> ${ODIR}/concat_LCVO_snpfil_4.txt
+        line_count=$(wc -l < "$file")
+        if [ "$line_count" -lt 5 ]; then
+        else
+            cat "$file" >> ${ODIR}/concat_LCVO_snpfil_6.txt
+        fi
     fi
 done
 
