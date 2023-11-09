@@ -95,12 +95,11 @@ hcdata="${ODIR}/HC/HCVO_allpops_snpfil_6_final.vcf.gz"
 lcdata="${ODIR}/LC/LCVO_allpops_snpfil_9_final.vcf.gz"
 
 bcftools merge ${hcdata} ${lcdata} -o ${ODIR}/allpops_VO.vcf
-bcftools index -t ${ODIR}/allpops_VO.vcf
 
 /home/564/km6006/bin/vcftools \
     --vcf ${ODIR}/allpops_VO.vcf \
     --max-missing 0.8 \
-    --recode --recode-INFO-all --stdout | gzip -c > ${ODIR}/allpops_VO_0.8_final.vcf.gz
+    --recode --recode-INFO-all --out ${ODIR}/allpops_VO_0.8_final.vcf
 
 # Convert to bcf and index
 bcftools convert -O b ${DIR}/allpops_VO_0.8_final.vcf > ${DIR}/allpops_VO_0.8_final.bcf
