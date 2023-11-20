@@ -1,4 +1,4 @@
-### Calculate Fst for each putative inversion
+### Calculate Fst per SNP for each putative inversion
 ### GNU parallel by chromosome/inversion
 
 #activate the miniconda environment
