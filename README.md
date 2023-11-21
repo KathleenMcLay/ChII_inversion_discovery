@@ -1,1 +1,1 @@
-# inversion_paper
+# Ch1 pop inversions

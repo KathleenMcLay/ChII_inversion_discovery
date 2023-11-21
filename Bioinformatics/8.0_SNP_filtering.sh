@@ -18,6 +18,7 @@ gatk SelectVariants \
     -R /scratch/ht96/km6006/SLv141Asm_Ch20RN.fasta \
     -V ${input_file} \
     --exclude-non-variants \
+    --select-type-to-include SNP \
     -O ${ODIR}/${1}_${cov}_${ds}_all_pops.vcf.gz
 
 # Gatk filtering - adds PASS to the filter field, otherwise, if failed adds the name/s of the failed filter

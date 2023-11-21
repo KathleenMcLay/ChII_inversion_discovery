@@ -87,3 +87,10 @@ awk '!/CHR/ && $6 > 0.4 {print $1, $2}' ${ODIR}/concat_LCVO_snpfil_4.txt > ${ODI
     --gzvcf ${ODIR}/${cov}${ds}_allpops_snpfil_6.vcf.gz \
     --min-meanDP 3 \
     --recode --recode-INFO-all --out ${ODIR}/${cov}${ds}_allpops_snpfil_7_final
+
+# Filter to biallelic sites only
+/home/564/km6006/bin/vcftools \
+    --vcf ${ODIR}/${cov}${ds}_allpops_snpfil_7_final.recode.vcf \
+    --min-alleles 2 \
+    --max-alleles 2 \
+    --recode --recode-INFO-all --out ${ODIR}/${cov}${ds}_allpops_snpfil_8_final_biallelic
