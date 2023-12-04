@@ -19,7 +19,7 @@ fastp --in1 ${DATDIR}/${1}_1.fq.gz \
     --unpaired1 ${QCDIR}/${1}_R1_unpaired.fastq.gz --unpaired2 ${QCDIR}/${1}_R2_unpaired.fastq.gz \
     -q 10 -u 50 -l 50 -h ${QCDIR}/${1}.html &> ${QCDIR}/${1}.log 
 
-# fastQC - quality report. 
+# fastQC - quality report
 fastqc ${QCDIR}/${1}_R1_trimmed.fastq.gz ${QCDIR}/${1}_R1_trimmed.fastq.gz -o ${QCDIR}
 
 # align and add read groups with BWA, sort the bam file with Samtools  
@@ -27,7 +27,7 @@ bwa mem -t 12 -M -R "@RG\tSM:${1}\tID:${1}\tLB:${1}\tPL:ILLUMINA\tPU:${1}" \
     /scratch/ht96/km6006/SLv141Asm_Ch20RN.fasta \
     ${QCDIR}/${1}_R1_trimmed.fastq.gz ${QCDIR}/${1}_R2_trimmed.fastq.gz | samtools sort -@ 12 -T ${ALDIR}/${1} -o ${ALDIR}/${1}_trm_srt.bam 
 
-# alignment stats report.
+# alignment stats report
 samtools flagstat ${ALDIR}/${1}_trm_srt.bam &> ${ALDIR}/${1}_trm_srt_stats.txt
 
 # clean the bam file with Picard 

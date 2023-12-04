@@ -1,3 +1,5 @@
+### Merge the samtools per sample coverage files into a single file
+
 output_file="/g/data/ht96/McLay_UQ/inversion_paper/per_sample_coverage.txt"
 
 cd /g/data/ht96/McLay_UQ/inversion_paper/3_clean
