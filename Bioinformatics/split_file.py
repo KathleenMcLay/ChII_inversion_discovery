@@ -1,5 +1,4 @@
 ### Split a text file into sub files based on number of rows
-### Use this to split the GNU parallel txt files and run multiple parallel jobs
 
 # Define the input and output file names
 input_file = 'vc_file_list.txt'
