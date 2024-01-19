@@ -3,29 +3,21 @@
 
 module load bcftools 
 
-DIR="/g/data/ht96/McLay_UQ/inversion_paper/5_joint_calling"
-ODIR="/g/data/ht96/McLay_UQ/inversion_paper/6_SNP_filtering"
+DIR="/g/data/ht96/McLay_UQ/inversion_paper/joint"
+ODIR="/g/data/ht96/McLay_UQ/inversion_paper/6_SNP_filtering/pop_chrom"
 
-#subset the population vcf files by chromosome (35 pops total) 
-declare -a arr=("SLv141Ch1" "SLv141Ch2" "SLv141Ch3" "SLv141Ch4" "SLv141Ch5" "SLv141Ch6" "SLv141Ch7" "SLv141Ch8" "SLv141Ch9" "SLv141Ch10" "SLv141Ch11" "SLv141Ch12" "SLv141Ch13" "SLv141Ch14" "SLv141Ch15" "SLv141Ch16" "SLv141Ch17" "SLv141Ch18" "SLv141Ch19" "SLv141Ch20")
+#subset the population vcf files by chromosome
+declare -a arr=("scaffold_1" "scaffold_2" "scaffold_3" "scaffold_4" "scaffold_5" "scaffold_6" "scaffold_7" "scaffold_8" "scaffold_9" "scaffold_10" "scaffold_11" "scaffold_12" "scaffold_13" "scaffold_14" "scaffold_15" "scaffold_16" "scaffold_17" "scaffold_18" "scaffold_19" "scaffold_20" "scaffold_21" "scaffold_22" "scaffold_23" "scaffold_24" "scaffold_25" "scaffold_26" "scaffold_27" "scaffold_28" "scaffold_29" "scaffold_30")
 
 for i in "${arr[@]}";
 do
-    if [ ${#i} -eq 9 ]; then
-        modified_i="${i:0:8}0${i:8:1}"
+    if [ ${#i} -eq 10 ]; then
+        modified_i="${i:0:9}0${i:9:1}"
     else
         modified_i="${i}"
     fi
     chr="${modified_i: -2}"
-    bcftools view --threads 6 -O z --regions $i -o ${DIR}/${chr}_${1}_cohort.vcf.gz ${DIR}/${1}_cohort.vcf.gz &
+    bcftools view --threads 6 -O z --regions $i -o ${ODIR}/${chr}_${1}.vcf.gz ${DIR}/${1}_jntcl.vcf.gz &
 done 
-
-wait
-
-# index the chromosome files 
-for file in ${ODIR}/*.vcf.gz; 
-do
-    bcftools index --threads 12 -t ${file} &
-done
 
 wait
