@@ -24,7 +24,7 @@ PCA <- cbind(samples, PCA)
 write.table(PCA, "/g/data/ht96/McLay_UQ/inversion_paper/6_SNP_filtering/sf8_final_PCA.txt", sep="\t")
 
 # Plot the PCA 
-tiff("/g/data/ht96/McLay_UQ/inversion_paper/6_SNP_filtering/sf8_final_PCA_superzoom.tiff", units="in", width=9, height=7, res=300)
+tiff("/g/data/ht96/McLay_UQ/inversion_paper/6_SNP_filtering/sf8_final_PCA.tiff", units="in", width=9, height=7, res=300)
 ggplot(PCA, aes(x=PC1, y=PC2, col=population)) + geom_point(size = 1) + theme_bw() +
   scale_colour_discrete(name="Populations") +
   #geom_label_repel(aes(label = sample), size=1, segment.size=0.25, fill = "NA", show.legend = FALSE, segment.color = "transparent") + 
