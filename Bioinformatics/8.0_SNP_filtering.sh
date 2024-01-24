@@ -17,6 +17,7 @@ gatk SelectVariants \
     -R /scratch/ht96/km6006/2_D01_30.fasta \
     -V ${input_file} \
     --select-type-to-include SNP \
+    --select-type-to-include NO_VARIATION \
     -O ${DIR}/${1}_${cov}${ds}_sf0.vcf.gz
 
 # Gatk filtering - adds PASS to the filter field, otherwise, if failed adds the name/s of the failed filter
