@@ -25,7 +25,7 @@ POPS="${DIR}/${2}_POPS.txt"
 genotypes="/home/564/km6006/Scripts/inversion_paper/local_pca/inversion_genotypes.txt"
 
 # for each inversion check the genotype, and assign the genotype value as the 'population' for that individual
-while IFS=$'\t' read -r inversion genotype name population; do
+while IFS=$'\t' read -r inversion name genotype population; do
     echo "current $inversion has "$genotype" genotype"
     if [ "$inversion" == "$2" ] && [ "$genotype" -eq 0 ]; then
         echo -e "$name\t$genotype" >> "$POPS"
