@@ -134,3 +134,9 @@ gatk SelectVariants \
 # create bcf file 
 bcftools convert -O b ${DIR}/sf8_final.vcf.gz > ${DIR}/sf8_final.bcf
 bcftools index -f ${DIR}/sf8_final.bcf
+
+# remove singletons 
+/home/564/km6006/bin/vcftools \
+    --bcf ${DIR}/sf8_no_variants_noD1_reheader_final.bcf \
+    --mac 2 \
+    --out ${DIR}/sf8_no_variants_noD1_reheader_final_nsng
