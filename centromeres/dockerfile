@@ -1,0 +1,64 @@
+# To execute a script inside the container:
+# docker run -v /path/to/local/script:/path/in/container image_name /path/in/container/script_name
+# e.g.
+# docker run -v /home/user/scripts:/mnt image_name /mnt/scripts/Setup_Run_Repeats.sh -i SpeciesName -f Reference_Genome.fasta -h H0 -c 16 -m 64000 
+
+# Use Ubuntu 22.04 as the base image
+FROM ubuntu:22.04
+
+# Set environment variable to skip interactive prompts
+ENV DEBIAN_FRONTEND noninteractive
+
+# Install necessary dependencies
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    wget \
+    libxml2-dev \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    zlib1g-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libtiff5-dev \
+    libgsl-dev \
+    libglu1-mesa-dev \
+    libfreetype6-dev \
+    libfribidi-dev \
+    libharfbuzz-dev \
+    libcairo2-dev \
+    libxt-dev \
+    libx11-dev \
+    x11proto-core-dev \
+    libudunits2-dev \
+    nano \ 
+    parallel \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install R and its dependencies from apt
+RUN apt-get update && apt-get install -y \
+    r-base \
+    r-base-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+    
+# Install additional R libraries
+RUN R -e "install.packages(c('devtools', 'remotes'), repos='https://cloud.r-project.org/')"
+RUN R -e "remotes::install_github('celphin/RepeatOBserverV1')"
+
+# Install Emboss and its dependencies from apt
+RUN apt-get update && apt-get install -y \
+    emboss \
+    emboss-lib \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+    
+# Install seqkit version 2.7.0
+RUN wget https://github.com/shenwei356/seqkit/releases/download/v2.7.0/seqkit_linux_amd64.tar.gz \
+    && tar -xzf seqkit_linux_amd64.tar.gz \
+    && mv seqkit /usr/local/bin \
+    && rm seqkit_linux_amd64.tar.gz
+
+# Set the entry point to bash
+ENTRYPOINT ["/bin/bash"]
+

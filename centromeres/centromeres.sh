@@ -12,7 +12,7 @@
 module load singularity 
 
 directory="/g/data/ht96/McLay_UQ/inversion_paper/centromeres"
-species="senecio_lautus"
+species="seneciolautus" #no underscores in name
 ref_genome="/g/data/ht96/McLay_UQ/inversion_paper/centromeres/2_D01_30.fasta"
 haplotype="H0"
 cpus="24"
