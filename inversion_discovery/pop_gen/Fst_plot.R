@@ -4,41 +4,46 @@ install.packages("fANCOVA")
 library(fANCOVA)
 library(ggplot2)
 library(tools)
+library(stringr)
 
-fst.files <- list.files(path = "/Users/kathleenmclay/Google Drive/Papers/Avneet_polygenic_adaptation/results/data_tables/fst", pattern=".fst", all.files=FALSE)
-inversions <- read.csv("/Users/kathleenmclay/Google Drive/Papers/Avneet_polygenic_adaptation/methods/inversions.csv")
-k = 1
+fst_data <- read.csv("/Users/kathleenmclay/Google Drive/PhD/Chapter_1_inversions/3_results /3_population_level_inversions/data/Fst/fst_data_all.csv")
+unique_inversions <- unique(fst_data$inversion) # get unique inversions
 
-pdf("/Users/kathleenmclay/Desktop/Fst_weighted.pdf", height=7, width=7) 
-for (j in 1:length(fst.files)){
-  # read in data, remove any na values, add index column set negative Fst values to 0
-  fst.dat <- read.table(paste("/Users/kathleenmclay/Google Drive/Papers/Avneet_polygenic_adaptation/results/data_tables/fst/", fst.files[j], sep = ""), header=TRUE)
-  fst.dat <- na.omit(fst.dat)
-  fst.dat$index <- 1:nrow(fst.dat)
-  fst.dat$WEIGHTED_FST[fst.dat$WEIGHTED_FST < 0] <- 0
-  fst.dat$MEAN_FST[fst.dat$MEAN_FST < 0] <- 0
+pdf("/Users/kathleenmclay/Google Drive/PhD/Chapter_1_inversions/3_results /3_population_level_inversions/figures/fst_plots.pdf", height=4.5, width=4.5)
+for (inv in unique_inversions) {
+  k = 1
+
+  current_inv <- subset(fst_data, inversion == inv)
+  current_inv <- na.omit(current_inv)
+  current_inv$index <- 1:nrow(current_inv)
+  current_inv$WEIGHTED_FST[current_inv$WEIGHTED_FST < 0] <- 0
+  current_inv$MEAN_FST[current_inv$MEAN_FST < 0] <- 0
   
   # add window midpoint value to data for plotting
-  for (i in 1:nrow(fst.dat)) {
-    fst.dat$mid[i]=floor((fst.dat$BIN_START[i]+fst.dat$BIN_END[i])/2)
+  for (i in 1:nrow(current_inv)) {
+    current_inv$mid[i]=floor((current_inv$BIN_START[i]+current_inv$BIN_END[i])/2)
   }
   
   # determine optimal loess smoothing values
-  fst.lo <- loess.as(fst.dat$index, fst.dat$WEIGHTED_FST, degree = 2, criterion ="aicc", user.span = NULL, plot = F)
+  fst.lo <- loess.as(current_inv$index, current_inv$WEIGHTED_FST, degree = 2, criterion ="aicc", user.span = NULL, plot = F)
   fst.lo.pred <- predict(fst.lo)
   
   #add loess smoothing values to the dataset 
-  fst.dat <- cbind(fst.dat,fst.lo.pred)
+  fst.dat <- cbind(current_inv,fst.lo.pred)
   
   #get current inversion start and end, to add to plot
-  current_inversion <- inversions[k,]
-  inv_start <- current_inversion[1,3]
-  inv_end <- current_inversion[1,4]
+  current_inversion <- inv
+  
+  split_string <- unlist(strsplit(current_inversion, "[:-]"))
+  inv_start <- as.numeric(split_string[2])
+  inv_end <- as.numeric(split_string[3])
+  
+  current_pop <- unique(current_inv$population)
+  
   k = k + 1 
-
+  
   #plot
-  title <- tools::file_path_sans_ext(fst.files[j])
-  fst.plot <- ggplot(fst.dat, aes(x=mid/1000000, y=WEIGHTED_FST)) + theme_bw() +
+  fst.plot <- ggplot(current_inv, aes(x=mid/1000000, y=WEIGHTED_FST)) + theme_bw() +
     geom_point(col="grey") +
     geom_line(data=fst.dat, aes(x=mid/1000000, y=fst.lo.pred),col="navyblue") +
     annotate("rect", fill = "lightblue", alpha = 0.5, 
@@ -46,7 +51,7 @@ for (j in 1:length(fst.files)){
              ymin = 0, ymax = 1) +
     xlab("Positions (Mbp)") +
     ylab("Fst (weighted)") +
-    ggtitle(title) +
+    (ggtitle(paste(current_pop, " ", inv)) ) +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
           plot.margin = unit(c(0.3,0.3,0.3,0.3), "inches"),
           axis.title.x = element_text(margin = margin(t = 20), face="bold", size = 12), 

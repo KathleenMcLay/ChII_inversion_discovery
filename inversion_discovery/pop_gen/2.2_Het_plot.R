@@ -6,31 +6,26 @@ library(gridExtra)
 library(grid)
 library(ggrepel)
 
-heterozygosity <- read.table("/.../results/lpca_tables/9_heterozygosity.txt")
-heterozygosity$genotype <- as.character(heterozygosity$genotype)
+het_data <- read.csv("/Users/kathleenmclay/Google Drive/PhD/Chapter_1_inversions/3_results /3_population_level_inversions/data/Het/het_data_all_inversions.csv")
+het_data$genotype <- as.character(het_data$genotype)
+het_data$genotype <- trimws(het_data$genotype, whitespace = '"')
 
-new <- tibble(mds_coord=character(), name=character(), 
-              PC1=numeric(), PC2=numeric(), genotype=character(), het=character())
+unique_inversions <- unique(het_data$inversion) # get unique inversions
 
-pdf("/.../results/HET_plots.pdf", height=7, width=7)
-for (i in 1:nrow(mds_info)) {
-  for (j in 1:nrow(heterozygosity)) {
-    if (mds_info$mds_coord[i] == heterozygosity$mds_coord[j]) {
-      new <- rbind(new, heterozygosity[j,]) 
-    }
-  }
-  het_plot <- new %>%
+pdf("/Users/kathleenmclay/Google Drive/PhD/Chapter_1_inversions/3_results /3_population_level_inversions/figures/HET_plots.pdf", height=4.5, width=4.5)
+for (inv in unique_inversions) {
+  current_inv <- subset(het_data, inversion == inv) # subset the data to current inversion
+  current_pop <- unique(current_inv$pop)
+  het_plot <- current_inv %>%
     ggplot(., aes(x=as.character(genotype), y=het, fill=as.character(genotype))) + geom_boxplot() + theme_bw() +
-    ggtitle(paste(mds_info$mds_coord[i], " ", mds_info$chromosome[i])) +
+    ggtitle(paste(current_pop, " ", inv)) +
     scale_fill_manual(name="Genotype", values=c("red","purple","blue")) +
     xlab("Genotype") + ylab("Heterozygosity") +
     theme(plot.margin = unit(c(0.3,0.3,0.3,0.3), "inches"),
           axis.title.x = element_text(margin = margin(t = 20), face="bold", size = 12), 
           axis.title.y = element_text(margin = margin(t = 0, r = 15, b = 0, l = 0), face="bold", size = 12),
           plot.title = element_text(vjust = 4, size = 10), axis.text.x=element_text(colour="black"), axis.text.y=element_text(colour="black"),
-          axis.text = element_text(size = 12))
+          axis.text = element_text(size = 12), legend.position = "none")
   print(het_plot)
-  new <- tibble(mds_coord=character(), name=character(), 
-                  PC1=numeric(), PC2=numeric(), genotype=character(), het=character())
 }
 dev.off()

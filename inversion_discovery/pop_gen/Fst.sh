@@ -1,42 +1,54 @@
-### Calculate Fst for each putative inversion
-### GNU parallel by chromosome+inversion
+### For each inversion, calculate Fst for the scaffold between the 0 and 2 genotype groups 
 
 module load bcftools
 module load vcftools 
 
-FILE="/QRISdata/Q6684/6_snp_filtering/pa_vo_sf5_final.recode_RS.vcf.gz"
-DIR="/QRISdata/Q6684/fst"
-OUTPUT="/QRISdata/Q6684/fst/${2}_fst"
+fst="/QRISdata/Q6656/new_lpca/fst_out"
+ld="/QRISdata/Q6656/new_lpca/LD_out"
+popdir="/QRISdata/Q6656/new_lpca/population_vcfs"
 
-# Filter to the chromosome
-bcftools filter ${FILE} --regions ${1} --output ${DIR}/${2}.vcf 
+poplist="/home/uqkmcla4/scripts/current/pops.txt"
 
-# create list variables for each homozygous genotype group
-G0="${DIR}/${2}_G0.txt"
-G2="${DIR}/${2}_G2.txt"
+while IFS= read -r pop; do # for each population
+    echo "$pop"
+    
+    gzvcf="${popdir}/${pop}.vcf.gz"
 
-# read in the sample genotype data for all inversions
-genotypes="/home/uqkmcla4/scripts/avneet/inversion_genotypes.txt"
+    for file in "$ld"/"${pop}"_*genotypelist.txt; do  # for each inversion 
+        filename=$(basename -- "$file")
+        filename="${filename%_*}"
+        current_inv="${filename#*_}"
 
-# For the current inversion add each homozygous sample to the correct list, based on their genotype
-while IFS=$'\t' read -r inversion name genotype population; do
-    echo "current $inversion has $genotype genotype"
-    if [ "$inversion" == "$2" ] && [ "$genotype" -eq 0 ]; then
-        echo -e "$name\t$population" >> "$G0"
-    elif [ "$inversion" == "$2" ] && [ "$genotype" -eq 2 ]; then
-        echo -e "$name\t$population" >> "$G2"
-    else
-        echo "het sample"
-    fi
-done < "$genotypes"
+        # filter vcf to the chromosome
+        scaffold="${current_inv%%:*}"
+        bcftools filter ${gzvcf} --regions ${scaffold} --output ${fst}/${filename}_${scaffold}.vcf 
 
-wait
+        #create files for genotype lists
+        G0="${fst}/${filename}_G0.txt"
+        G2="${fst}/${filename}_G2.txt"
 
-# Calculate Weir and Cockerham’s Fst between the two homozygous genotypes
-vcftools \
-    --vcf ${DIR}/${2}.vcf \
-    --weir-fst-pop ${G0} \
-    --weir-fst-pop ${G2} \
-    --fst-window-size 10000 \
-    --fst-window-step 10000 \
-    --out ${OUTPUT}
+        # read in the sample genotype data for all inversions
+        genotypes="$file" 
+
+        # For the current inversion add each homozygous sample to the correct list, based on their genotype
+        while IFS=$'\t' read -r name inversion genotype population; do
+            echo "current $inversion has $genotype genotype"
+            if [ "$inversion" == "$current_inv" ] && [ "$genotype" -eq 0 ]; then
+                echo -e "$name\t$population" >> "$G0"
+            elif [ "$inversion" == "$current_inv" ] && [ "$genotype" -eq 2 ]; then
+                echo -e "$name\t$population" >> "$G2"
+            else
+                echo "het sample"
+            fi
+        done < "$genotypes"
+
+        # Calculate Weir and Cockerham’s Fst between the two homozygous genotypes
+        vcftools \
+            --vcf ${fst}/${filename}_${scaffold}.vcf \
+            --weir-fst-pop "$G0" \
+            --weir-fst-pop "$G2" \
+            --fst-window-size 10000 \
+            --fst-window-step 10000 \
+            --out "${fst}/${filename}_${scaffold}"
+    done
+done < "$poplist"

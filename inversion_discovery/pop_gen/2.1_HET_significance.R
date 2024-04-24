@@ -1,53 +1,41 @@
 ## Mann-W U test 
-mds_info <- read.table("/Users/kathleenmclay/Google Drive/PhD/Chapter_1_inversions/results /senecio_system/data/lpca_all/8_mds_info.txt")
-het_data <- read.table("/Users/kathleenmclay/Google Drive/PhD/Chapter_1_inversions/results /senecio_system/data/lpca_all/9_heterozygosity.txt")
+het_data <- read.csv("/Users/kathleenmclay/Google Drive/PhD/Chapter_1_inversions/3_results /3_population_level_inversions/data/Het/het_data_all_inversions.csv")
 het_data$genotype <- as.character(het_data$genotype)
+het_data$genotype <- trimws(het_data$genotype, whitespace = '"')
 
+man_u01 <- data.frame(pop=character(), inversion=character(), group=character(), p_val=numeric()) 
+man_u12 <- data.frame(pop=character(), inversion=character(), group=character(), p_val=numeric()) 
 
-#0-1
-het01 <- subset(het_data, genotype %in% c('0','1'))
-new <- tibble(mds_coord=character(), name=character(), 
-              PC1=numeric(), PC2=numeric(), genotype=character(), het=character())
+unique_inversions <- unique(het_data$inversion) # get unique inversions
 
-man_u01 <- tibble(inversion=character(), group=character(), p_val=numeric())
-
-for (i in 1:nrow(mds_info)) {
-  for (j in 1:nrow(het01)) {
-    if (mds_info$mds_coord[i] == het01$mds_coord[j]) {
-      new <- rbind(new, het01[j,]) 
-    }
+#0-1 genotype comparison 
+for (inv in unique_inversions) {
+  current_inv <- subset(het_data, inversion == inv) # subset the data to current inversion
+  current_pop <- unique(current_inv$pop)
+  het01 <- subset(current_inv, genotype %in% c('0','1')) # subset the data again to only include rows with 0 or 1 in the genotype column 
+  if (sum(het01$genotype == '0') == 0 || sum(het01$genotype == '1') == 0) {
+    next # skip to next iteration if either '0' or '1' is missing in the subset
   }
-  test <- wilcox.test(new$het~new$genotype)
-  p_val <- test$p.value
-  inversion <- paste0(mds_info$chromosome[i], ":", mds_info$start[i], "-", mds_info$end[i])
-  group <- "0-1"
-  p_val <- cbind(p_val, inversion, group)
-  
-  man_u01 <- rbind(man_u01, p_val)
-  new <- tibble(mds_coord=character(), name=character(), 
-                PC1=numeric(), PC2=numeric(), genotype=character(), het=character())
+  test <- wilcox.test(het01$het ~ het01$genotype) # perform wilcox.test
+  p_val <- test$p.value # get p-value for wilcox 
+  new_01<- data.frame(pop = current_pop, inversion = inv, group = "0-1", p_val = p_val)
+  man_u01 <- rbind(man_u01, new_01) #rbind current result 
 }
 
-het12 <- subset(het_data, genotype %in% c('1','2'))
-new <- tibble(mds_coord=character(), name=character(), 
-              PC1=numeric(), PC2=numeric(), genotype=character(), het=character())
-man_u12 <- tibble(inversion=character(), group=character(), p_val=numeric())
-
-for (i in 1:nrow(mds_info)) {
-  for (j in 1:nrow(het12)) {
-    if (mds_info$mds_coord[i] == het12$mds_coord[j]) {
-      new <- rbind(new, het12[j,]) 
-    }
+#1-2 genotype comparison 
+for (inv in unique_inversions) {
+  current_inv <- subset(het_data, inversion == inv) # subset the data to current inversion
+  current_pop <- unique(current_inv$pop)
+  het12 <- subset(current_inv, genotype %in% c('1','2')) # subset the data again to only include rows with 0 or 1 in the genotype column 
+  if (sum(het12$genotype == '1') == 0 || sum(het12$genotype == '2') == 0) {
+    next # skip to next iteration if either '0' or '1' is missing in the subset
   }
-  test <- wilcox.test(new$het~new$genotype)
-  p_val <- test$p.value
-  inversion <- paste0(mds_info$chromosome[i], ":", mds_info$start[i], "-", mds_info$end[i])
-  group <- "1-2"
-  p_val <- cbind(p_val, inversion, group)
-  man_u12 <- rbind(man_u12, p_val)
-  new <- tibble(mds_coord=character(), name=character(), 
-                PC1=numeric(), PC2=numeric(), genotype=character(), het=character())
+  
+  test <- wilcox.test(het12$het ~ het12$genotype) # perform wilcox.test
+  p_val <- test$p.value # get p-value for wilcox 
+  new_12 <- data.frame(pop = current_pop, inversion = inv, group = "1-2", p_val = p_val)
+  man_u12 <- rbind(man_u12, new_12) #rbind current result 
 }
 
 het_sig <- rbind(man_u01, man_u12)
-write.table(het_sig, "/Users/kathleenmclay/Google Drive/PhD/Chapter_1_inversions/results /senecio_system/results_tables/het_significance.txt", sep = "\t")
+write.csv(het_sig, "/Users/kathleenmclay/Google Drive/PhD/Chapter_1_inversions/3_results /3_population_level_inversions/data/Het/het_significance.csv", sep = "\t")
