@@ -106,7 +106,7 @@ done
 # Filter the list for those sites where the missing data for any population is > 50%  
 awk '!/CHR/ && $6 > 0.5 {print $1, $2}' ${DIR}/sf6_popmiss.txt > ${DIR}/sf6_badloci.txt
 
-# Filter out low data sites for populations 
+# Filter out low data sites for populations and filter to biallelic sites only 
 /home/564/km6006/bin/vcftools \
     --gzvcf ${DIR}/sf6.vcf.gz \
     --exclude-positions ${DIR}/sf6_badloci.txt \
@@ -135,7 +135,7 @@ gatk SelectVariants \
 bcftools convert -O b ${DIR}/sf8_final.vcf.gz > ${DIR}/sf8_final.bcf
 bcftools index -f ${DIR}/sf8_final.bcf
 
-# remove singletons 
+# remove singletons - singletons also removed from vcf
 /home/564/km6006/bin/vcftools \
     --bcf ${DIR}/sf8_no_variants_noD1_reheader_final.bcf \
     --mac 2 \
