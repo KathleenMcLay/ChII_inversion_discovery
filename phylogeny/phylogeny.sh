@@ -7,7 +7,7 @@ PR_OUT="/g/data/ht96/McLay_UQ/inversion_paper/phy/sf7_pruned_10kb.vcf"
 PHY_DIR="/g/data/ht96/McLay_UQ/inversion_paper/phy"
 RAX_IN="/g/data/ht96/McLay_UQ/inversion_paper/phy/sf7_pruned_10kb.phy"
 
-# Filter to 1 SNP per 100kb 
+# Filter to 1 SNP per 10kb 
 bcftools +prune -w 10kb --nsites-per-win 1 ${INFILE} -O v -o ${PR_OUT}
 
 # convert to phy file 
