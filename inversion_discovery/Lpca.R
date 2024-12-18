@@ -1,4 +1,4 @@
-#Local PCA (MDS), PCA of outliers and Heterozygosity of outliers 
+#Local PCA + MDS outlier analysis from Todesco et al. 2020 
 
 library(lostruct)
 library(doParallel)
