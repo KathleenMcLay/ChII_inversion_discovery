@@ -30,7 +30,7 @@ do
         modified_i="${i}"
     fi
     chr="${modified_i: -2}"
-    /home/564/km6006/homer/bin/analyzeHiC ${dir}/${1}_HiC-TAG -chr ${i} -res 10000 -coverageNorm > ${dir}/int_matrix/${1}_${i}_hic_matrix.txt
+    /home/564/km6006/homer/bin/analyzeHiC ${dir}/${1}_HiC-TAG -chr ${i} -res 1000000 -coverageNorm > ${dir}/int_matrix/${1}_${i}_hic_matrix.txt
     cat ${dir}/${1}_${i}_hic_matrix.txt | perl /home/564/km6006/Scripts/inversion_paper/hic/hicmatrix2table.pl ${1} > ${dir}/${1}_${i}_hic_table.txt
 done
 
