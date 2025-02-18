@@ -6,40 +6,48 @@ library(SNPRelate)
 library(Matrix)
 library(ggplot2)
 
-inversion_list <- read.csv("/QRISdata/Q6656/chapter_II/new_inv_discovery/inversions.csv", header=TRUE)
+inversion_list <- read.csv("/QRISdata/Q6656/chapter_II/new_inv_discovery/2_regions_summary_final.csv", header=TRUE)
 
-for row in inversion_list{
+# Create a loop to run PCA on each inversion region
+for (row in 1:nrow(inversion_list)) {
     # create a variable to filter the vcf
-    region <- row$vcf_filter
+    region <- inversion_list[row, "vcf_filter_alt"]
     # create a variable for the population name/s
-    pop <- row$population
+    pop <- inversion_list[row, "population"]
 
     # create the correct population prefix to create a sample list from the vcf for populations with two or more subpopulations
-    if (nchar(pop) > 2) { 
+    if (nchar(pop) > 3) { 
         pop_filter <- paste0(substr(pop, 1, 3), "|", substr(pop, 4, 6))
         } else {
         pop_filter <- pop  # Keep original if <= 2 characters
     }
-
+    print(paste("CURRENT POP FILTER VALUE IS:", pop_filter, " for inversion", region))
     # extract a list of samples for the current population
-    x <- paste("bcftools query -l /QRISdata/Q6656/sf8_no_variants_noD1_reheader_final_nsng.vcf.gz | grep -E ^",pop_filter," > /QRISdata/Q6656/chapter_II/new_inv_discovery/",pop,"_sample_list.txt", sep = "")
-    system(x)
 
+    extract <- paste(
+    "bcftools query -l /QRISdata/Q6656/sf8_no_variants_noD1_reheader_final_nsng.vcf.gz | grep -E \"^",
+    pop_filter,
+    "\" > /QRISdata/Q6656/chapter_II/new_inv_discovery/alt/",
+    pop, "_sample_list.txt",
+    sep = ""
+    )
+    system(extract)
     # filter the vcf 
-    x <- paste("bcftools view --threads 12 -O z -S /QRISdata/Q6656/chapter_II/new_inv_discovery/", pop, "_sample_list.txt -r ", region, " -o /QRISdata/Q6656/chapter_II/new_inv_discovery/inv_vcfs/", pop, "_", region, ".vcf.gz /QRISdata/Q6656/sf8_no_variants_noD1_reheader_final_nsng.vcf.gz", sep = "")
-    system(x)
-    index <- paste("bcftools index --threads 24 /QRISdata/Q6656/chapter_II/new_inv_discovery/inv_vcfs/", pop, "_", region, ".vcf.gz", sep = "")
+    filter <- paste("bcftools view --threads 12 -O z -S /QRISdata/Q6656/chapter_II/new_inv_discovery/alt/", pop, "_sample_list.txt -r ", region, " -o /QRISdata/Q6656/chapter_II/new_inv_discovery/alt/inv_vcfs/", pop, "_", region, ".vcf.gz /QRISdata/Q6656/sf8_no_variants_noD1_reheader_final_nsng.vcf.gz", sep = "")
+    system(filter)
+    # index the vcf
+    index <- paste("bcftools index --threads 24 /QRISdata/Q6656/chapter_II/new_inv_discovery/alt/inv_vcfs/", pop, "_", region, ".vcf.gz", sep = "")
     system(index)
 
-    # read in list of samples for the population and keep just the list of samples
-    samples <- read.table(paste("/QRISdata/Q6656/chapter_II/new_inv_discovery/", pop, "_sample_list.txt", sep=""), header=FALSE)
+    # read in list of samples for the population 
+    samples <- read.table(paste("/QRISdata/Q6656/chapter_II/new_inv_discovery/alt/", pop, "_sample_list.txt", sep=""), header=FALSE)
 
-    # read in the vcf
-    vcf_fn <- paste("/QRISdata/Q6656/chapter_II/new_inv_discovery/inv_vcfs/", pop, "_", region, ".vcf.gz", sep="")
+    # read in the vcf for the current inversion
+    vcf_fn <- paste("/QRISdata/Q6656/chapter_II/new_inv_discovery/alt/inv_vcfs/", pop, "_", region, ".vcf.gz", sep="")
     # Convert VCF file
-    snpgdsVCF2GDS(vcf_fn, paste("/QRISdata/Q6656/chapter_II/new_inv_discovery/pca/", pop, "_", region, "_senecio.gds"))
+    snpgdsVCF2GDS(vcf_fn, paste("/QRISdata/Q6656/chapter_II/new_inv_discovery/alt/pca/", pop, "_", region, "_senecio.gds", sep=""))
     # Assign the new file to an object 
-    genofile <- snpgdsOpen(paste("/QRISdata/Q6656/chapter_II/new_inv_discovery/pca/", pop, "_", region, "_senecio.gds"))
+    genofile <- snpgdsOpen(paste("/QRISdata/Q6656/chapter_II/new_inv_discovery/alt/pca/", pop, "_", region, "_senecio.gds", sep=""))
     # Run PCA 
     senecio_pca <- snpgdsPCA(genofile, autosome.only=FALSE)
 
@@ -54,7 +62,7 @@ for row in inversion_list{
     colnames(PCA) <- c("PC1", "PC2")
     PCA <- as.matrix(PCA) 
 
-    # Compute kmeans - makes either 3 or 2 genotype clusters, 3 clusters consistent with inversion
+    # Compute kmeans - makes either 3 or 2 genotype clusters
     try_3_clusters <-try(kmeans(PCA[,1], 3, centers=c(min(PCA[,1]), (min(PCA[,1])+max(PCA[,1]))/2, max(PCA[,1]))))
     if("try-error" %in% class(try_3_clusters)){
     kmeans_cluster <-kmeans(PCA[,1], 2, centers=c(min(PCA[,1]), max(PCA[,1])))
@@ -71,14 +79,14 @@ for row in inversion_list{
     mutate(PC1=as.double(PC1), PC2=as.double(PC2))
     cluster_genotypes$cluster <- kmeans_cluster$cluster - 1
     cluster_genotypes$cluster <- as.character(cluster_genotypes$cluster)
-    cluster_name <- paste("/QRISdata/Q6656/chapter_II/new_inv_discovery/pca/", pop, "_", region, "_PCA_genotypes.txt", sep= "")
+    cluster_name <- paste("/QRISdata/Q6656/chapter_II/new_inv_discovery/alt/pca/", pop, "_", region, "_PCA_genotypes.txt", sep= "")
     write.table(cluster_genotypes, cluster_name, sep="\t")
 
     # Make percentage stats dataset 
     betweenSS_perc <- kmeans_cluster$betweenss / kmeans_cluster$totss
     stat_table <- tibble(PC1_perc=as.numeric(PC1_perc), PC2_perc=as.numeric(PC2_perc),
                         betweenSS_perc=as.numeric(round(betweenSS_perc,4)), mean_sil_score=as.numeric(round(mean_sil_score,4)))
-    stat_name <- paste("/QRISdata/Q6656/chapter_II/new_inv_discovery/pca/", pop, "_", region, "_PCA_stats.txt", sep= "")
+    stat_name <- paste("/QRISdata/Q6656/chapter_II/new_inv_discovery/alt/pca/", pop, "_", region, "_PCA_stats.txt", sep= "")
     write.table(stat_table, stat_name, sep="\t")
 
     snpgdsClose(genofile)
