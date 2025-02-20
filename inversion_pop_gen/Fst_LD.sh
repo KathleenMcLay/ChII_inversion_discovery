@@ -85,3 +85,4 @@ while IFS="," read -r inv population scaffold; do
     cat ${dir}/ld/${inv}_${population}_G2.geno.ld | perl /home/uqkmcla4/scripts/reformat/emerald2windowldcounts.pl > ${dir}/ld/${inv}_${population}_G2_ld.txt
 
 done < "$inversions"
+
