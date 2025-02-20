@@ -1,8 +1,10 @@
 library(SNPRelate)
+library(data.table)
+library(stringr)
 #library(ggplot2)
 
-#read in the file containing the inversions(chr:start-end) [,1] and the population in which they were discovered (P01 P02) [,2]
-inversions <- read.csv("/scratch/user/uqkmcla4/PCA_projection/inversions.csv")
+#read in the file containing the inversions(chr:start-end) [,1] and the population in which they were discovered (P01P02) [,2]
+inversions <- read.csv("/QRISdata/Q6656/chapter_II/new_inv_discovery/alt/4_regions_results_summary.csv", header = FALSE)
 
 #function to perform kmeans clustering on new samples
 perform_kmeans <- function(data, centers_list) {
@@ -36,17 +38,19 @@ for (i in 1:nrow(inversions)) {
     ### Create input file for current inversion 
     #isolate the current inversions coordinates chr:start-end
     current_inv <- inversions[i,1]
-    #subset the vcf.gz file to the current inversion 
-    x <- paste("bcftools view --threads 12 -O z -r ",current_inv, " -o /scratch/user/uqkmcla4/PCA_projection/",current_inv,".vcf.gz /scratch/user/uqkmcla4/sf8_SNPs_reheader_nsng.vcf.gz", sep="")
-    system(x)
-    index <- paste("bcftools index --threads 24 /scratch/user/uqkmcla4/PCA_projection/",current_inv,".vcf.gz", sep = "")
-    system(index)
+    print(current_inv)
+    #subset the vcf.gz file to the current inversion with all populations
+    # x <- paste("bcftools view --threads 12 -O z -r ",current_inv, " -o /scratch/user/uqkmcla4/PCA_projection/",current_inv,".vcf.gz /scratch/user/uqkmcla4/sf8_SNPs_reheader_nsng.vcf.gz", sep="")
+    # system(x)
+    # index <- paste("bcftools index --threads 12 /scratch/user/uqkmcla4/PCA_projection/",current_inv,".vcf.gz", sep = "")
+    # system(index)
     
     ### Principal component analysis - using the samples from the inversion discovery population
     #create a vector of the discovery populations  
-    dis_pop <- unlist(strsplit(inversions[i,2], " "))
-    #create a regular expression to filter the samples to those from the discovery populations 
-    dis_pop_fil <- paste("^(", paste(dis_pop, collapse = "|"), ")", sep = "")
+    dis_pop <- unlist(str_extract_all(inversions[i, 2], "[A-Z][0-9]{2}"))
+    # Create a regular expression to filter the samples to those from the discovery populations
+    dis_pop_fil <- paste0("^(", paste(dis_pop, collapse = "|"), ")")
+    print(paste("Discovery population: ", dis_pop_fil))
 
     #current inversion vcf.gz file
     vcf_fn <- paste("/scratch/user/uqkmcla4/PCA_projection/",current_inv,".vcf.gz", sep = "")
@@ -72,7 +76,7 @@ for (i in 1:nrow(inversions)) {
     
     ### Calculate the eigenvectors for each of the remaining samples
     # specify samples to be projected 
-    proj_samples <- all_samples[grep(dis_pop_fil, all_samples, invert = TRUE)]
+    proj_samples <- all_samples
     #make a dataframe of the samples
     proj_samples_df <- data.frame(Samples = proj_samples)
     print("start of proj_samples_df")
@@ -109,7 +113,7 @@ for (i in 1:nrow(inversions)) {
     if (!is.null(kmeans_cluster)) {
       PCA$genotype <- kmeans_cluster$cluster
     }
-    write.table(PCA, paste("/scratch/user/uqkmcla4/PCA_projection/new_genotypes_", current_inv, ".txt", sep = ""))
+    write.table(PCA, paste("/QRISdata/Q6656/chapter_II/new_inv_discovery/alt/pca_projection/new_genotypes_", current_inv, ".txt", sep = ""))
 
     ### Plot PCA of projected samples 
     #Set up variable for plot theme settings 
