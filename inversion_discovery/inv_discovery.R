@@ -1,7 +1,7 @@
 library(cluster) 
 library(dplyr)    
 
-# Load data into a dataframe `df` with columns: chrom, position, mds01, mds02, window_index
+# Load the merged pop_win_regions file with columns: chrom, position, mds01, mds02, window_index
 df <- read.csv("MDS_win_regions_data_all.csv", header = TRUE)
 df <- df[, c("chrom", "start", "end", "mid", "mds01", "mds02", "n", "population")]
 
@@ -55,7 +55,7 @@ for (pop in pops) {
       group_by(cluster) %>%
       mutate(run_id = cumsum(c(1, diff(n) != 1))) %>%  # Identify consecutive runs
       group_by(cluster, run_id) %>%
-      filter(high_z) %>%
+      filter(high_z) %>% # move this below to get a list of all windows with > 1.5 z-score to identify adjacent non-consecutive windows 
       filter(n() >= 10)  %>%  # Require at least 10 consecutive windows
       ungroup()
     
@@ -68,47 +68,15 @@ for (pop in pops) {
 }
 
 # Output results
-print(selected_regions)
 write.csv(selected_regions, file = "selected_regions.csv", row.names = FALSE)
 
+# output a summary of the inversion regions
 inversion_summary <- selected_regions %>%
-  group_by(population, chrom, run_id) %>%  # Group by population, chromosome, and unique inversion (run_id)
+  group_by(population, chrom, run_id) %>%
   summarise(
     start = min(start),
     end = max(end),
+    length = (max(end) - min(start) + 1)/1000000,
     .groups = "drop"
-  )
-
-inversion_summary <- inversion_summary %>%
-  mutate(
-    length = (end - start + 1)/1000000 # Calculate the length of each inversion
   )
 write.csv(inversion_summary, file = "inversion_summary.csv", row.names = FALSE)
-
-
-has_consecutive_10 <- function(n_values) {
-  diffs <- diff(n_values)  # Compute differences between consecutive n values
-  consec_streaks <- rle(diffs == 1)  # Identify runs where n increases by exactly 1
-  any(consec_streaks$lengths[consec_streaks$values] >= 9)  # Check if any run has at least 9 differences (10 consecutive values)
-}
-
-# Filtering dataset to keep all rows for a run_id if it has at least 10 consecutive n values
-filtered_data <- selected_regions %>%
-  group_by(run_id) %>%
-  filter(has_consecutive_10(n)) %>%
-  ungroup()
-
-filter_summary <- filtered_data %>%
-  group_by(population, chrom, run_id) %>%  # Group by population, chromosome, and unique inversion (run_id)
-  summarise(
-    start = min(start),
-    end = max(end),
-    .groups = "drop"
-  )
-
-filter_summary <- filter_summary %>%
-  mutate(
-    length = (end - start + 1)/1000000  # Calculate the length of each inversion
-  )
-write.csv(filter_summary, file = "region_summary_allwindows.csv", row.names = FALSE)
-
