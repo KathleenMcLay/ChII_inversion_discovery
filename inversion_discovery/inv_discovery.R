@@ -55,8 +55,8 @@ for (pop in pops) {
       group_by(cluster) %>%
       mutate(run_id = cumsum(c(1, diff(n) != 1))) %>%  # Identify consecutive runs
       group_by(cluster, run_id) %>%
-      filter(high_z) %>% # move this below to get a list of all windows with > 1.5 z-score to identify adjacent non-consecutive windows 
       filter(n() >= 10)  %>%  # Require at least 10 consecutive windows
+      filter(high_z) %>% # move this above to get a list of all windows with > 1.5 z-score to identify adjacent non-consecutive windows 
       ungroup()
     
     # Store results
