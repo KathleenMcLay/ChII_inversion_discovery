@@ -1,6 +1,6 @@
-ld_data <- read.csv("/Users/kathleenmclay/Google Drive/PhD/Chapter_1_inversions/3_results /3_population_level_inversions/data/new_LD.csv")
+ld_data <- read.csv("new_LD.csv")
 ld_data <- drop_na(ld_data) 
-ld_cg_data <- read.csv("/Users/kathleenmclay/Google Drive/PhD/Chapter_1_inversions/3_results /3_population_level_inversions/data/LD_cmn_gen_data.csv")
+ld_cg_data <- read.csv("LD_cmn_gen_data.csv")
 ld_cg_data <- drop_na(ld_cg_data)
 
 unique_inversions <- unique(ld_cg_data$inversion) # get unique inversions

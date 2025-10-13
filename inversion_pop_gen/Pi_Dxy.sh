@@ -2,14 +2,14 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=12
-#SBATCH --mem=1000GB
+#SBATCH --mem=100GB
 #SBATCH --job-name=pixy
 #SBATCH --time=5:00:00
 #SBATCH --partition=general
 #SBATCH --account=a_ortiz_barrientos_coe
 #SBATCH --output=/home/uqkmcla4/scripts/pixy.txt 
 
-set -x  # Print each command as it executes
+#set -x  # Print each command as it executes
 set -e  # Exit on any error
 
 source ~/miniconda3/etc/profile.d/conda.sh
@@ -23,14 +23,23 @@ conda info --envs
 
 module load htslib
 module load bcftools
+module load vcftools
 echo "bcftools loaded"
 
 # directory
-dir="/QRISdata/Q6656/chapter_II/new_inv_discovery/alt"
+dir="/QRISdata/Q6656/chapter_II/5_inversion_pop_gen"
 # vcf file including monomorphic and variant sites 
-gzvcf="/QRISdata/Q6656/chapter_II/new_inv_discovery/alt/pi_dxy/sf7_noD1_reheader.vcf.gz"
+gzvcf="/QRISdata/Q6656/chapter_II/1_bioinformatics/6_SNP_filtering/sf6.vcf.gz"
 # list of inversions 
-inversions="/QRISdata/Q6656/chapter_II/new_inv_discovery/alt/inversions.csv"
+inversions="${dir}/inversions.csv"
+
+vcftools \
+    --gzvcf ${gzvcf} \
+    --exclude-positions /QRISdata/Q6656/chapter_II/1_bioinformatics/6_SNP_filtering/sf6_badloci.txt \
+    --recode --recode-INFO-all --out ${dir}/sf7
+
+bgzip -@ 12 ${dir}/sf7.recode.vcf
+bcftools index --threads 12 -t ${dir}/sf7.recode.vcf.gz
 
 # Convert potential Windows line endings and clean the file
 tr -d '\r' < "$inversions" > "${inversions}.tmp"
@@ -49,7 +58,7 @@ while IFS=, read -r inv population scaffold || [[ -n "$inv" ]]; do
         -S "${dir}/${population}_sample_list.txt" \
         -r "${scaffold}" \
         --output "${dir}/pi_dxy/${inv}_${population}_pixy.vcf.gz" \
-        "${gzvcf}"
+        ${DIR}/sf7.recode.vcf.gz
 
     echo "filtered vcf created"
     # index the filtered VCF with tabix (tabix index is required for pixy)
