@@ -3,33 +3,38 @@ library(data.table)
 library(stringr)
 #library(ggplot2)
 
+#compress and index the vcf file outside of R using bcftools
+
+system(bcftools view --threads 12 -O z -o /scratch/user/uqkmcla4/sf8_SNPs_reheader_nsng.vcf.gz /scratch/user/uqkmcla4/sf8_SNPs_reheader.vcf)
+system(bcftools index --threads 12 /scratch/user/uqkmcla4/sf8_SNPs_reheader_nsng.vcf.gz)
+
 #read in the file containing the inversions(chr:start-end) [,1] and the population in which they were discovered (P01P02) [,2]
 inversions <- read.csv("/scratch/user/uqkmcla4/PCA_projection/final_inversion_list.csv", header = FALSE)
 
 #function to perform kmeans clustering on new samples
-perform_kmeans <- function(data, centers_list) {
-  # Predefined identifiers for each center
-  center_ids <- list(
-    c(0, 1, 2),  # Identifiers for 3 clusters (min, midpoint, max)
-    c(0, 2),     # Identifiers for 2 clusters (min, max)
-    c(0, 1),     # Identifiers for 2 clusters (min, midpoint)
-    c(1, 2)      # Identifiers for 2 clusters (midpoint, max)
-  )
+# perform_kmeans <- function(data, centers_list) {
+#   # Predefined identifiers for each center
+#   center_ids <- list(
+#     c(0, 1, 2),  # Identifiers for 3 clusters (min, midpoint, max)
+#     c(0, 2),     # Identifiers for 2 clusters (min, max)
+#     c(0, 1),     # Identifiers for 2 clusters (min, midpoint)
+#     c(1, 2)      # Identifiers for 2 clusters (midpoint, max)
+#   )
   
-  for (i in seq_along(centers_list)) {
-    centers <- centers_list[[i]]
-    result <- try(kmeans(data, length(centers), centers = centers), silent = TRUE)
-    if (!inherits(result, "try-error") && all(result$size > 0)) {
-      # Map cluster assignments to predefined identifiers
-      mapping <- order(centers)  # Order centers to determine their identifiers
-      result$cluster <- sapply(result$cluster, function(cluster) center_ids[[i]][mapping[cluster]])
-      return(result)
-    }
-  }
+#   for (i in seq_along(centers_list)) {
+#     centers <- centers_list[[i]]
+#     result <- try(kmeans(data, length(centers), centers = centers), silent = TRUE)
+#     if (!inherits(result, "try-error") && all(result$size > 0)) {
+#       # Map cluster assignments to predefined identifiers
+#       mapping <- order(centers)  # Order centers to determine their identifiers
+#       result$cluster <- sapply(result$cluster, function(cluster) center_ids[[i]][mapping[cluster]])
+#       return(result)
+#     }
+#   }
   
-  # If all attempts fail, return NULL and exit the function gracefully
-  return(NULL)
-}
+#   # If all attempts fail, return NULL and exit the function gracefully
+#   return(NULL)
+# }
 
 #open a pdf to save the plots 
 #pdf("/scratch/user/uqkmcla4/PCA_projection/PCA_plots.pdf", height=7, width=7) 
@@ -59,10 +64,10 @@ for (i in 1:nrow(inversions)) {
     GDS <- snpgdsVCF2GDS(vcf_fn, gds_file) 
     #assign the new file to an open object 
     genofile <- snpgdsOpen(GDS)
-    #create a vector for all samples in the vcf file  
-    all_samples <- read.gdsn(index.gdsn(genofile, "sample.id"))
-    print("start of all_samples")
-    print(all_samples)
+    # #create a vector for all samples in the vcf file  
+    # all_samples <- read.gdsn(index.gdsn(genofile, "sample.id"))
+    # print("start of all_samples")
+    # print(all_samples)
     #create a vector of just samples from the discovery population
     PCA_samples <- all_samples[grep(dis_pop_fil, all_samples)]
     print("start of PCA_samples")
@@ -70,49 +75,67 @@ for (i in 1:nrow(inversions)) {
     #run PCA 
     senecio_pca <- snpgdsPCA(genofile, autosome.only=FALSE, sample.id=PCA_samples)
     #create matrix of eigenvectors for original samples - to use as centre for calculating new 
-    OG_PCA <- senecio_pca$eigenvect[, 1:2]
+    #OG_PCA <- senecio_pca$eigenvect[, 1:2]
     #extract SNP loadings 
-    SnpLoadings <- snpgdsPCASNPLoading(senecio_pca, genofile)
-    
+    #SnpLoadings <- snpgdsPCASNPLoading(senecio_pca, genofile)
+    pc1 <- pca$eigenvect[,1]
+
+    # 3. Get genotype matrix
+    geno <- snpgdsGetGeno(genofile)
+    snp_id <- read.gdsn(index.gdsn(genofile, "snp.id"))
+    snp_pos <- read.gdsn(index.gdsn(genofile, "snp.position"))
+
+    # 4. Calculate R² for each SNP
+    calculate_r2 <- function(snp_geno, pc1_scores) {
+      valid <- !is.na(snp_geno)
+      if(sum(valid) < 10) return(NA)  # Need enough samples
+      
+      cor_val <- cor(snp_geno[valid], pc1_scores[valid], 
+                    method = "pearson")
+      return(cor_val^2)
+    }
+
+    r2_values <- apply(geno, 2, calculate_r2, pc1_scores = pc1)
+
     ### Calculate the eigenvectors for each of the remaining samples
-    # specify samples to be projected 
-    proj_samples <- all_samples
-    #make a dataframe of the samples
-    proj_samples_df <- data.frame(Samples = proj_samples)
-    print("start of proj_samples_df")
-    print(head(proj_samples_df))
-    # calculate the eigenvectors 
-    proj_EV <-  snpgdsPCASampLoading(SnpLoadings, genofile, sample.id=proj_samples)
-    print("start of proj_EV")
-    print(proj_EV)
+    # # specify samples to be projected 
+    # proj_samples <- all_samples
+    # #make a dataframe of the samples
+    # proj_samples_df <- data.frame(Samples = proj_samples)
+    # print("start of proj_samples_df")
+    # print(head(proj_samples_df))
+    # # calculate the eigenvectors 
+    # proj_EV <-  snpgdsPCASampLoading(SnpLoadings, genofile, sample.id=proj_samples)
+    # print("start of proj_EV")
+    # print(proj_EV)
     
     ### Genotype remaining samples 
     #create matrix of eigenvectors to compute kmean clusters
-    PCA <- proj_EV$eigenvect[, 1:2]
-    colnames(PCA) <- c("PC1", "PC2")
-    print("start of PCA")
-    print(head(PCA))
-    matrixPCA <- as.matrix(PCA) 
-    print("start of matrixPCA")
-    print(head(matrixPCA))
+    # PCA <- proj_EV$eigenvect[, 1:2]
+    # colnames(PCA) <- c("PC1", "PC2")
+    # print("start of PCA")
+    # print(head(PCA))
+    # matrixPCA <- as.matrix(PCA) 
+    # print("start of matrixPCA")
+    # print(head(matrixPCA))
     
     ###kmeans clustering to identify genotype groups - get the three cluster centres from the original PCA sample eigenvectors 
     # Define the fallback centers
-    centers_list <- list(
-      c(min(OG_PCA[, 1]), (min(OG_PCA[, 1]) + max(OG_PCA[, 1])) / 2, max(OG_PCA[, 1])), # 3 clusters
-      c(min(OG_PCA[, 1]), max(OG_PCA[, 1])),                                            # 2 clusters (min, max)
-      c(min(OG_PCA[, 1]), (min(OG_PCA[, 1]) + max(OG_PCA[, 1])) / 2),                   # 2 clusters (min, midpoint)
-      c((min(OG_PCA[, 1]) + max(OG_PCA[, 1])) / 2, max(OG_PCA[, 1]))                    # 2 clusters (midpoint, max)
-    )
+    # centers_list <- list(
+    #   c(min(OG_PCA[, 1]), (min(OG_PCA[, 1]) + max(OG_PCA[, 1])) / 2, max(OG_PCA[, 1])), # 3 clusters
+    #   c(min(OG_PCA[, 1]), max(OG_PCA[, 1])),                                            # 2 clusters (min, max)
+    #   c(min(OG_PCA[, 1]), (min(OG_PCA[, 1]) + max(OG_PCA[, 1])) / 2),                   # 2 clusters (min, midpoint)
+    #   c((min(OG_PCA[, 1]) + max(OG_PCA[, 1])) / 2, max(OG_PCA[, 1]))                    # 2 clusters (midpoint, max)
+    # )
     # Perform k-means clustering
-    kmeans_cluster <- perform_kmeans(matrixPCA[, 1], centers_list)
+    # kmeans_cluster <- perform_kmeans(matrixPCA[, 1], centers_list)
     
     #output genotype and eigenvector values for new samples 
-    PCA <- cbind(proj_samples_df, PCA)
-    #check if the kmeans_cluster has assigned genotypes
-    if (!is.null(kmeans_cluster)) {
-      PCA$genotype <- kmeans_cluster$cluster
-    }
+    # PCA <- cbind(proj_samples_df, PCA)
+    # #check if the kmeans_cluster has assigned genotypes
+    # if (!is.null(kmeans_cluster)) {
+    #   PCA$genotype <- kmeans_cluster$cluster
+    # }
     write.table(PCA, paste("/scratch/user/uqkmcla4/PCA_projection/new_genotypes_", current_inv, ".txt", sep = ""))
 
     ### Plot PCA of projected samples 
